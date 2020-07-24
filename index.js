@@ -26,15 +26,6 @@ const adapter = new BotFrameworkAdapter({
     appPassword: process.env.MicrosoftAppPassword
 });
 
-var directLine = new DirectLine({
-    token: process.env.BotSecretID
-    // token: /* or put your Direct Line token here (supply secret OR token, not both) */,
-    // domain: /* optional: if you are not using the default Direct Line endpoint, e.g. if you are using a region-specific endpoint, put its full URL here */
-    // webSocket: /* optional: false if you want to use polling GET to receive messages. Defaults to true (use WebSocket). */,
-    // pollingInterval: /* optional: set polling interval in milliseconds. Defaults to 1000 */,
-    // timeout: /* optional: a timeout in milliseconds for requests to the bot. Defaults to 20000 */,
-});
-
 const onTurnErrorHandler = async (context, error) => {
     // This check writes out errors to console log .vs. app insights.
     // NOTE: In production environment, you should consider logging this to Azure
@@ -62,8 +53,9 @@ const myBot = new EchoBot();
 
 // Listen for incoming requests.
 app.post('/api/messages', (req, res) => {
-    console.log(req);
-    console.log("GG");
+    console.log("POST#MESSAGE");
+    console.log(req.body);
+    console.log("POST#MESSAGE");
     adapter.processActivity(req, res, async (context) => {
         // Route to main dialog.
         await myBot.run(context);
@@ -76,8 +68,20 @@ const goodBoyUrl = 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d
   + 'ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1350&q=80';
 
 app.post('/whatsapp', async (req, res) => {
+    try {
+    var directLine = new DirectLine({
+        token: process.env.BotSecretID
+        // token: /* or put your Direct Line token here (supply secret OR token, not both) */,
+        // domain: /* optional: if you are not using the default Direct Line endpoint, e.g. if you are using a region-specific endpoint, put its full URL here */
+        // webSocket: /* optional: false if you want to use polling GET to receive messages. Defaults to true (use WebSocket). */,
+        // pollingInterval: /* optional: set polling interval in milliseconds. Defaults to 1000 */,
+        // timeout: /* optional: a timeout in milliseconds for requests to the bot. Defaults to 20000 */,
+    });
+        
     const { body } = req;
+    console.log("POST#WP");
     console.log(body);
+    console.log("POST#WP");
     let messageTwilio;
     
     if (body.NumMedia > 0) {
@@ -92,8 +96,17 @@ app.post('/whatsapp', async (req, res) => {
             res.send(messageTwilio.toString()).status(200);
         }else{
             
+            directLine.postActivity({
+                from: { id: body.From}, // required (from.name is optional)
+                type: 'message',
+                text: body.Body
+            }).subscribe(
+                id => console.log("Posted activity, assigned ID ", id),
+                error => console.log("Error posting activity", error)
+                );
+                    
             directLine.activity$
-                .filter(activity => activity.type === 'message'&& activity.from.id === process.env.ID_BOT_DIRECT_LINE)
+                .filter(activity => activity.type === 'message'&& activity.from.id === process.env.ID_BOT_DIRECT_LINE )
                 .subscribe(
                     message => {
                         console.log("received message ", message);
@@ -102,22 +115,19 @@ app.post('/whatsapp', async (req, res) => {
                         res.set('Content-Type', 'text/xml');
                         res.send(messageTwilio.toString()).status(200);
                     });
-            directLine.postActivity({
-                from: { id: body.From}, // required (from.name is optional)
-                type: 'message',
-                text: body.Body
-            }).subscribe(
-                id => console.log("Posted activity, assigned ID ", id),
-                error => console.log("Error posting activity", error)
-            );
-                    // 
-                    
 
         }
     }
     // res.set('Content-Type', 'text/xml');
     // res.send(messageTwilio.toString()).status(200);
 
+    } catch (error) {
+        console.log(error);
+        messageTwilio = new MessagingResponse().message("Algo salio mal");
+        res.set('Content-Type', 'text/xml');
+        res.send(messageTwilio.toString()).status(200);
+        
+    }
 });
 
 // app.on('upgrade', (req, socket, head) => {
