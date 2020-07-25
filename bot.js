@@ -14,20 +14,20 @@ class EchoBot extends ActivityHandler {
             await next();
         });
 
-        // this.onMembersAdded(async (context, next) => {
-        //     console.log("context##")
-        //     console.log(context.activity)
-        //     console.log(context.activity.membersAdded)
-        //     console.log("context##")
-        //     const membersAdded = context.activity.membersAdded;
-        //     const welcomeText = 'Hello and welcome!';
-        //     for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
-        //         if (membersAdded[cnt].id !== context.activity.recipient.id) {
-        //             await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
-        //         }
-        //     }
-        //     await next();
-        // });
+        this.onMembersAdded(async (context, next) => {
+            console.log("context##")
+            console.log(context.activity)
+            console.log(context.activity.membersAdded)
+            console.log("context##")
+            const membersAdded = context.activity.membersAdded;
+            const welcomeText = 'Hello and welcome!';
+            for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
+                if (membersAdded[cnt].id !== context.activity.recipient.id) {
+                    await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
+                }
+            }
+            await next();
+        });
     }
 }
 

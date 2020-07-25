@@ -4,8 +4,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express')
 const { MessagingResponse } = require('twilio').twiml;
-// const ENV_FILE = path.join(__dirname, '.env');
-// dotenv.config({ path: ENV_FILE });
+const ENV_FILE = path.join(__dirname, '.env');
+dotenv.config({ path: ENV_FILE });
+const client = require("twilio")(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
 
 const { BotFrameworkAdapter } = require('botbuilder');
 const { DirectLine } = require('botframework-directlinejs');
@@ -80,6 +81,8 @@ app.post('/whatsapp', async (req, res) => {
         
     const { body } = req;
     console.log("POST#WP");
+    console.log(req)
+    console.log("POST#WP");
     console.log(body);
     console.log("POST#WP");
     let messageTwilio;
@@ -109,11 +112,25 @@ app.post('/whatsapp', async (req, res) => {
                 .filter(activity => activity.type === 'message'&& activity.from.id === process.env.ID_BOT_DIRECT_LINE )
                 .subscribe(
                     message => {
-                        console.log("received message ", message);
-                        console.log(message.text)
-                        messageTwilio = new MessagingResponse().message(message.text);
-                        res.set('Content-Type', 'text/xml');
-                        res.send(messageTwilio.toString()).status(200);
+                        myPhone =body.From
+                        try {
+                            console.log("received message ", message);
+                            console.log(message.text)
+                            messageTwilio = new MessagingResponse().message(message.text);
+                            res.set('Content-Type', 'text/xml');
+                            res.send(messageTwilio.toString()).status(200);
+                        } catch (error) {
+                            console.log(error)
+                            client.messages
+                            .create({
+                                // mediaUrl: ['https://images.unsplash.com/photo-1545093149-618ce3bcf49d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=668&q=80'],
+                                from:process.env.TWILIO_PHONE,
+                                body: message.text,
+                                to: myPhone
+                            })
+                            .then(message => console.log(message.sid));
+
+                        }
                     });
 
         }
